@@ -7,7 +7,7 @@ A few days ago, I installed the newest 64-bit gdb program (version 7.7.1) on Sol
 (1) The "`set follow-fork-mode child`" command doesn't take effect. By default, after the parent process forks the child process, the gdb will track the parent process, so this command can make gdb begin to follow the child process. But this command works OK on Linux.  
 (2) The gdb can't parse the 32-bit application core dump file. Per my understanding, the 64-bit gdb should parse both 32-bit and 64-bit core dump files.
 
-I think these are 2 bugs, so I reported them to the gdb:https://sourceware.org/bugzilla/show_bug.cgi?id=17044 and https://sourceware.org/bugzilla/show_bug.cgi?id=17045. But unfortunately, there is no any responses from the gdb. Suddenly I hit upon an idea: since I worked on Solaris, why not use DTrace? Yes, DTrace. DTrace is a very cool application which can trace application, and tell you the function flow of the application. So I start working on it at once!
+I thought these are 2 bugs, so I reported them to the gdb organization :[https://sourceware.org/bugzilla/show_bug.cgi?id=17044](https://sourceware.org/bugzilla/show_bug.cgi?id=17044) and [https://sourceware.org/bugzilla/show_bug.cgi?id=17045](https://sourceware.org/bugzilla/show_bug.cgi?id=17045). But unfortunately, there was no any responses from the gdb organization. Suddenly I hit upon an idea: since I worked on Solaris, why not use DTrace? Yes, DTrace. DTrace is a very cool application which can trace application, and tell you the function flow of the application. So I started working on it at once!
 
 (1) The "set follow-fork-mode child" command doesn't take effect.  
 Firstly, I wrote a simple C test program:
@@ -31,7 +31,7 @@ Firstly, I wrote a simple C test program:
         printf("hello world\n");
         return 0;
     }
-Then I wrote the DTrace script (debug_gdb.d) to diagnose gdb. Because I hadn't read gdb source code before and I didn't know the function flow of the gdb, I would like to know how the functionw were called and executed.  
+Then I wrote the DTrace script (debug_gdb.d) to diagnose gdb. Because I hadn't read gdb source code before and I didn't know the function flow of the gdb, I would like to know how the functions are called and executed.  
 The script was like the following, and it recorded every entry and return of the function:
 
     #!/usr/sbin/dtrace -Fs
@@ -39,7 +39,7 @@ The script was like the following, and it recorded every entry and return of the
     pid$target:gdb::return
     {
     }
-The "-F" option's effect is "Coalesce trace output by identifying function entry  and return. Function  entry  probe reports are indented and their output is prefixed with ->. Function return  probe reports are unindented and their output is prefixed with <- . " so it can tell us how the gdb was executed.
+The "-F" option's effect is "Coalesce trace output by identifying function entry  and return. Function  entry  probe reports are indented and their output is prefixed with ->. Function return  probe reports are unindented and their output is prefixed with <\- . " so it can tell us how the gdb was executed.
 
 I began to use gdb to debug the program:
 
@@ -63,7 +63,7 @@ Before executing "`set follow-fork-mode child`" command, I ran the DTrace script
 
     `./debug_gdb.d -p 4408 > a.txt`
 
-Then I execute the "`set follow-fork-mode child`" command in gdb:
+Then I executed the "`set follow-fork-mode child`" command in gdb:
 
     (gdb) set follow-fork-mode child
 Oh, the output of DTrace script was very large, more than 900 lines, but I found the following function entries and returns:
@@ -85,9 +85,9 @@ a) The `empty_sfunc` is like this:
     {
     }
 
-It really did nothing!
+It really do nothing!
 
-and it was called in `add_set_or_show_cmd`:
+and it is called in `add_set_or_show_cmd`:
 
     static struct cmd_list_element *
     add_set_or_show_cmd (const char *name,
@@ -109,7 +109,7 @@ and it was called in `add_set_or_show_cmd`:
       set_cmd_sfunc (c, empty_sfunc);
       return c;
     }
-and the `set_cmd_sfunc` was like this:
+and the `set_cmd_sfunc` is like this:
 
     void
     set_cmd_sfunc (struct cmd_list_element *cmd, cmd_sfunc_ftype *sfunc)
@@ -120,8 +120,8 @@ and the `set_cmd_sfunc` was like this:
         cmd->func = do_sfunc;
       cmd->function.sfunc = sfunc; /* Ok.  */
     }
-so from above, I knew the `cmd`'s `func` and `function.sfunc` both set to `empty_sfunc`.  
-b) Then I searched "`follow-fork-mode`" in source code, it appeared in `add_setshow_enum_cmd` function:
+so from above, I knew the `cmd`'s `function.sfunc` is set to `empty_sfunc`.  
+b) Then I searched "`follow-fork-mode`" in source code, it appears in `add_setshow_enum_cmd` function:
 
     add_setshow_enum_cmd ("follow-fork-mode", class_run,
 			follow_fork_mode_kind_names,
@@ -136,7 +136,7 @@ b) Then I searched "`follow-fork-mode`" in source code, it appeared in `add_sets
     			NULL,
     			show_follow_fork_mode_string,
     			&setlist, &showlist);
-The fourth input parameter from bottom was `NULL`, and it was the `set_func` of the `cmd`. The `add_setshow_enum_cmd` is like this:
+The fourth input parameter from bottom is `NULL`, and it is the `set_func` of the `cmd`. The `add_setshow_enum_cmd` is like this:
 
     void
     add_setshow_enum_cmd (const char *name,
@@ -161,7 +161,7 @@ The fourth input parameter from bottom was `NULL`, and it was the `set_func` of 
       c->enums = enumlist;
     }
 
-`add_setshow_enum_cmd` called `add_setshow_cmd_full`, and what did `add_setshow_cmd_full` do?
+`add_setshow_enum_cmd` calls `add_setshow_cmd_full`, and what does `add_setshow_cmd_full` do?
 
     static void
     add_setshow_cmd_full (const char *name,
@@ -186,11 +186,11 @@ The fourth input parameter from bottom was `NULL`, and it was the `set_func` of 
         ......
     }
 
-Form the above code analysis, I got the following conclusion: by default, the `cmd`'s `function.sfunc` was `empty_sfunc`, it would be set only if the `set_func` was not `NULL`. Because the default value of "`follow-fork-mode`" command's `set_func` was `NULL`, this command wouldn't take effect by default.  
+Form the above code analysis, I got the following conclusion: by default, the `cmd`'s `function.sfunc` is `empty_sfunc`, and it would be set only if the `set_func` is not `NULL`. Because the default value of "`follow-fork-mode`" command's `set_func` is `NULL`, this command wouldn't take effect by default.  
 
-Another question, why did it work OK on Linux? After further investigating the code, I found the Linux had a customized function for supporting this command: `linux_child_follow_fork`.
+Another question, why does it work OK on Linux? After further investigating the code, I found the Linux has a customized function for supporting this command: `linux_child_follow_fork`.
 
-So the conclusion is: by default, the gdb doesn't support "`set follow-fork-mode child`" command, it needs the diffent platforms implement the function themselves.
+So the conclusion is: by default, the gdb doesn't support "`set follow-fork-mode child`" command, it needs the different platforms implement the function themselves.
 
 (2) The gdb can't parse the 32-bit application core dump file.  
 Firstly, I wrote a simple C program which can generate core dump file:  
@@ -206,7 +206,7 @@ Then, after generating core dump file, I would use gdb to analyze it. Usually, u
 
 `gdb path/to/the/executable path/to/the/coredump`  
 
-But because our DTrace script need work after gdb had run, I would use another method to start gdb:  
+But because our DTrace script need work after gdb has run, I would use another method to start gdb:  
 
     bash-3.2# ./gdb -data-directory ./data-directory
 	GNU gdb (GDB) 7.7.1
@@ -229,7 +229,7 @@ But because our DTrace script need work after gdb had run, I would use another m
 Before loading the core dump file, I ran the DTrace script (the 4859 is the gdb process ID):  
 
 	./debug_gdb.d -p 4859 > a.txt
-Then I loaded core dump file in gdb, and gdb outputs:  
+Then I loaded core dump file in gdb, and gdb outputted:  
 
     (gdb) core-file /var/core/core.a.4856.1403588180
 	warning: Couldn't find general-purpose registers in core file.
@@ -249,7 +249,7 @@ Then I loaded core dump file in gdb, and gdb outputs:
 	warning: Couldn't find general-purpose registers in core file.
 	#0  <unavailable> in ?? ()
 
-But this time, the Dtrace ouput file was terribly large (almost 2G), and I couldn't easily get the cause like the above issue. But I noticed a function:`warning`. Yes, the gdb outputs "warning: Couldn't find general-purpose registers in core file.", so I hoped this function can help me, then I created a new DTrace script:  
+But this time, the Dtrace ouput file was terribly large (almost 2G), and I couldn't easily get the root cause like the above issue. But I noticed a function:`warning`. Yes, the gdb outputted "warning: Couldn't find general-purpose registers in core file.", so I hoped this function can help me, then I created a new DTrace script:  
 
     #!/usr/sbin/dtrace -Fs
 	pid$target:gdb:warning:entry,
@@ -259,7 +259,7 @@ But this time, the Dtrace ouput file was terribly large (almost 2G), and I could
 	}
 When the warning was ouputted, the call stack would also be printted. 
 
-After execute "`core-file /var/core/core.a.4856.1403588180`" command again, the DTrace script output was like this:
+After executing "`core-file /var/core/core.a.4856.1403588180`" command again, the DTrace script output was like this:
 
 	10  -> warning                               
 	              gdb`warning
@@ -282,7 +282,7 @@ After execute "`core-file /var/core/core.a.4856.1403588180`" command again, the 
 	              gdb`solib_add+0x190
 	              gdb`post_create_inferior+0xe1
 	              gdb`core_open+0x2a8
-From this output, I could see an error occured in `get_core_register_section`, then I read this function code:  
+From this output, I could see an error occurred in `get_core_register_section`, then I read this function code:  
 
     static void
 	get_core_register_section (struct regcache *regcache,
@@ -320,7 +320,7 @@ And the `section_hash_lookup` is like this:
     #define section_hash_lookup(table, string, create, copy) \
 	  ((struct section_hash_entry *) \
 	   bfd_hash_lookup ((table), (string), (create), (copy)))
-So until tracing here, I could see the root cause is `bfd_hash_lookup` return `NULL`, then gdb outputted "warning: Couldn't find general-purpose registers in core file".
+So until tracing here, I could see the root cause was `bfd_hash_lookup` return `NULL`, then gdb outputted "warning: Couldn't find general-purpose registers in core file".
 
 I improved the DTrace script, and it was like this:  
 
@@ -345,7 +345,8 @@ I improved the DTrace script, and it was like this:
 	}
 This script would print the input arguments and return values of the `bfd_hash_lookup`, so I can see why the warning was outputted.
 
-After executing it, I knew the root cause was some registers section (like `.reg`) couldn't be created if doesn't exist.  
+After executing it, I knew the root cause was some register sections (like `.reg`) couldn't be created if don't exist.  
 
-As a man who haven't read gdb source code, only through very simple DTrace scripts (conatins only several lines), I can analyze the root cause of 2 gdb issues. So I suggest every programmer try to learn DTrace, and it can give you big rewards!  
+As a man who haven't read gdb source code, only through very simple DTrace scripts (contain only several lines), I can analyze the root cause of 2 gdb issues. So I suggest every Unix programmer try to learn DTrace, and it can give you big rewards!  
+
 Happy DTracing! Happy hacking!
