@@ -1,6 +1,6 @@
 ---
 layout: post
-title: 如何写gdb命令脚本（command file）
+title: 如何写gdb命令脚本
 ---
 作为UNIX/Linux下使用广泛的调试器，gdb不仅提供了丰富的命令，还引入了对脚本的支持：一种是对已存在的脚本语言支持，比如python，用户可以直接书写python脚本，由gdb调用python解释器执行；另一种是命令脚本（command file），用户可以在脚本中书写gdb已经提供的或者自定义的gdb命令，再由gdb执行。在这篇文章里，我会介绍一下如何写gdb的命令脚本。  
 
@@ -144,7 +144,7 @@ gdb支持用户自定义命令，格式是：
 			
 			while $begin_addr <= $end_addr
 				if *((unsigned char*)$begin_addr) == $arg2
-					printf "find it！The address is 0x%x\n", $begin_addr
+					printf "Find it！The address is 0x%x\n", $begin_addr
 					loop_break
 				else
 					set $begin_addr = $begin_addr + 1
@@ -188,7 +188,7 @@ gdb支持用户自定义命令，格式是：
 	$2 = 0
 	(gdb) source search_byte.gdb
 	(gdb) search_byte 0x600900 0x600903 0
-	find it! The address is 0x600900
+	Find it! The address is 0x600900
 	(gdb) search_byte 0x600900 0x600903 1
 	Can't find it!
 
@@ -198,5 +198,5 @@ gdb支持用户自定义命令，格式是：
 
 
 参考文献：  
-（1）Extending GDB ([https://sourceware.org/gdb/onlinedocs/gdb/Extending-GDB.html](https://sourceware.org/gdb/onlinedocs/gdb/Extending-GDB.html));
+（1）Extending GDB ([https://sourceware.org/gdb/onlinedocs/gdb/Extending-GDB.html](https://sourceware.org/gdb/onlinedocs/gdb/Extending-GDB.html));  
 （2）捉虫日记（[http://www.ituring.com.cn/book/909](http://www.ituring.com.cn/book/909)）。
