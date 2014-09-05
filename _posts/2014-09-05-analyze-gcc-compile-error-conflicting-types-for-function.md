@@ -1,6 +1,6 @@
 ---
 layout: post
-title: 关于error conflicting types for function编译错误的分析
+title: 关于“error conflicting types for function”编译错误的分析
 ---
 在使用gcc编译C程序时，有时会碰到“error: conflicting types for 'function'”的编译错误。从字面意义上理解，是说函数的定义和声明不一致。在这篇文章里，我就对这个错误做个简单的分析（使用的gcc版本是4.9.0）。  
 （一）首先我们看一个函数的定义和声明不一致的例子：  
