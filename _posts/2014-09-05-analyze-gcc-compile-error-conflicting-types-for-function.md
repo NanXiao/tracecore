@@ -1,4 +1,4 @@
----
+--- 
 layout: post
 title: 关于“error: conflicting types for 'function'”编译错误的分析
 ---
