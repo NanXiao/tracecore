@@ -3,6 +3,6 @@ layout: page
 title: About
 ---
 
-A website which shares system related or programming articles.
+A personal website which shares life and programming articles.
 
-If you have any issues, please contact me: xn212516 [AT] 163.com.
+If you have any issues, please contact me: nan [AT] chinadtrace.org.
