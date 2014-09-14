@@ -18,4 +18,4 @@ A simple server program whose function is just receiving protocol packets from c
 
 I think we can use a unified header for every protocol and server only listen to one port. Every message arrives the server with the same header, so this can avoid many duplicated codes. What the server needs to do is use "switch ... case" to parse every message according to the header. This can also decouple client-server programs.
 
-A good architecture is the base of the house. If there is a serious defection   in base, I am not sure whether the house can be stable.
+A good architecture is the base of the house. If there is a serious defection in base, I am not sure whether the house can be stable.
