@@ -1,6 +1,6 @@
 ---
 layout: post
-title: A Awful Project
+title: An Awful Project
 ---
 A simple server program whose function is just receiving protocol packets from clients, then paring them, and inserting the paring results into database. Why is the implementation so complicated and awful?  
 
