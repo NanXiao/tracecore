@@ -94,6 +94,6 @@ From [Compiling a Multithreaded Application](http://docs.oracle.com/cd/E19455-01
     For POSIX behavior, compile applications with the -D_POSIX_C_SOURCE flag set >= 199506L. For Solaris behavior, compile multithreaded programs with the -D_REENTRANT flag.
 So we should pay more attentions when building multithreaded application on Solaris.
 
-Reference:
-(1) [Compiling a Multithreaded Application](http://docs.oracle.com/cd/E19455-01/806-5257/6je9h033k/index.html);
+Reference:  
+(1) [Compiling a Multithreaded Application](http://docs.oracle.com/cd/E19455-01/806-5257/6je9h033k/index.html);  
 (2) [What is the correct way to build a thread-safe, multiplatform C library?](http://stackoverflow.com/questions/15944664/what-is-the-correct-way-to-build-a-thread-safe-multiplatform-c-library)
